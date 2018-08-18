@@ -1,19 +1,21 @@
 {
-  "bridge": {
-    "name": "Homebridge",
-    "username": "CD:22:3D:E3:CE:30",
-    "port": 51826,
-    "pin": "031-45-154"
-  },
+	"bridge": {
+		"name": "Homebridge",
+		"username": "CD:22:3D:E3:CE:30",
+		"port": 51826,
+		"pin": "031-45-154"
+	},
 
-  "description": "Sample configuration for SmartAC.",
+	"description": "Sample configuration for Daikin ITC.",
 
-  "platforms": [
-    {
-      "platform": "SmartAC",
-      "name": "ThinkEco SmartAC Platform",
-      "username": "you@example.com",
-      "password": "XXXX"
-    }
-  ]
+	"platforms": [{
+		"platform": "DaikinITC",
+		"name": "Daikin WebITC",
+		"addr": "http://192.168.1.4/cmd",
+		"zones": {
+			"GUEST BD1:1-07": "Guest Bedroom",
+			"KITCH": "Kitchen",
+			"MASTER": "Master Bedroom"
+		}
+	}]
 }
