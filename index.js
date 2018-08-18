@@ -113,7 +113,7 @@ class ThinkEcoAPI {
         this.addr = addr;
         this.zones = zones;
     }
-    sendReq(req) {
+    async sendReq(req) {
         return request({
             headers: {
                 'Cookie': "SETTING=LANG@TYPE=en:LOGIN@USER=admin:LOGIN@GUI=0:DIALOG@webitc.gui.system.DlgUserSetting=533,438:DIALOG@webitc.gui.system.DlgZoneEdit=677,447:TABLE@T6=80,150:TABLE@T7=80,150:TABLE@T8=80,150:TABLE@ST1=150,150,80,80,80:TABLE@T1=60,90,50,50,50,50:TABLE@T2=150,100:",
@@ -256,7 +256,7 @@ class Thermostat {
         this.lock = new Lock();
     }
 
-    updateZoneTemp(cb) {
+    async updateZoneTemp() {
         var _this = this;
         var bb = new ByteBuffer(32, true)
             .writeInt32(32)//size, start 0
@@ -266,38 +266,124 @@ class Thermostat {
             // .writeInt32(0)
             .writeInt32(9) //arg1
             .fill(0).flip();
-        this.api.sendReq(bb.toBuffer()).then(function (res) {
-            var b = ByteBuffer.wrap(res, true);
-            var i = b.readInt32(60);
-            var temp1, temp2;
-            if (i & 0x1 != 0)
-                temp1 = b.readFloat(64);
-            else
-                temp1 = 0;
-            if (i & 0x2 != 0)
-                temp2 = b.readFloat(68);
-            else
-                temp2 = 0;
-            _this.setTemp = temp1;
-            _this.actualTemp = temp2;
-            _this.run_mode = getDriveMode(b.readInt32(44));
-            _this.on_mode = b.readByte(73);
-            console.log("New set temp " + temp1 + ", " + temp2);
-            cb(_this);
+        let res = await this.api.sendReq(bb.toBuffer());
+        var b = ByteBuffer.wrap(res, true);
+        var i = b.readInt32(60);
+        var temp1, temp2;
+        if (i & 0x1 != 0)
+            temp1 = b.readFloat(64);
+        else
+            temp1 = 0;
+        if (i & 0x2 != 0)
+            temp2 = b.readFloat(68);
+        else
+            temp2 = 0;
+        _this.setTemp = temp1;
+        _this.actualTemp = temp2;
+        _this.run_mode = getDriveMode(b.readInt32(44));
+        _this.on_mode = b.readByte(73);
+        _this.api.log(_this.name, "New set temp " + temp1 + ", " + temp2);
+        // cb(_this);
+        return this;
+    }
+
+    setZoneTemp(tempC, cb){
+        var bb = new ByteBuffer(68,true)
+            .writeInt32(68) //size @0
+            .writeInt32(60112)//COMM@4
+            .writeInt32(this.id)//zone @8
+            .fill(0)
+            .writeInt32(0, 32) //new state, if set also need to set byte 52 to 1
+            .writeInt32(0, 36) //new mode, if set also need to set byte 53 to 1
+            .writeFloat(tempC, 48) //new temp, if set also need to set byte 54 to 1
+            .writeByte(0, 52) //flag to indicate new state
+            .writeByte(0, 53) //flag to indicate new mode
+            .writeByte(1, 54) //flag to indicate new temp
+            .flip();
+        // console.log(bb.toString("debug"));
+        this.api.sendReq(bb.toBuffer()).then(function(res){
+            cb(null, tempC);
+            // console.log("Finished sending");
+            // console.log(res);
+            // getZoneTemp(zone,function(v){
+            //     console.log("New temp: ");
+            //     console.log(v);
+            // })
         });
     }
 
-    update(cb) {
-        // var _this = this;
-        // await this.lock.acquire();
-        // if (Date.now() - this.lastUpdate > UPDATE_FREQUENCY) {
-            this.updateZoneTemp(cb);
-            // this.lastUpdate = Date.now();
-        // }
-        // else {
-        //     cb(_this);
-        // }
-        // this.lock.release();
+    setState(state, cb) {
+        if(state == 0) {
+            var bb = new ByteBuffer(40, true)
+                .writeInt32(40) //size @0
+                .writeInt32(60106)//COMM@4
+                .fill(0)
+                .writeInt32(1, 28)
+                .writeInt32(this.id, 36)//zone @8
+                .flip();
+            // console.log(bb.toString("debug"));
+            this.api.sendReq(bb.toBuffer()).then(function (res) {
+                cb(null, state);
+            });
+        }
+        else{
+            //on...
+            if(state == 1){
+                //cooling
+                var bb = new ByteBuffer(68,true)
+                    .writeInt32(68) //size @0
+                    .writeInt32(60112)//COMM@4
+                    .writeInt32(this.id)//zone @8
+                    .fill(0)
+                    .writeInt32(1, 32) //new state, if set also need to set byte 52 to 1
+                    .writeInt32(4, 36) //new mode, if set also need to set byte 53 to 1
+                    .writeFloat(0, 48) //new temp, if set also need to set byte 54 to 1
+                    .writeByte(1, 52) //flag to indicate new state
+                    .writeByte(1, 53) //flag to indicate new mode
+                    .writeByte(0, 54) //flag to indicate new temp
+                    .flip();
+                this.api.sendReq(bb.toBuffer()).then(function(res){
+                    cb(null, state);
+                });
+            }
+            else if(state == 2){
+                //heating
+                var bb = new ByteBuffer(68,true)
+                    .writeInt32(68) //size @0
+                    .writeInt32(60112)//COMM@4
+                    .writeInt32(this.id)//zone @8
+                    .fill(0)
+                    .writeInt32(1, 32) //new state, if set also need to set byte 52 to 1
+                    .writeInt32(2, 36) //new mode, if set also need to set byte 53 to 1
+                    .writeFloat(0, 48) //new temp, if set also need to set byte 54 to 1
+                    .writeByte(1, 52) //flag to indicate new state
+                    .writeByte(1, 53) //flag to indicate new mode
+                    .writeByte(0, 54) //flag to indicate new temp
+                    .flip();
+                this.api.sendReq(bb.toBuffer()).then(function(res){
+                    cb(null, state);
+                });
+            }
+
+        }
+    }
+
+
+    async update(cb) {
+        var _this = this;
+        await this.lock.acquire();
+        if (Date.now() - this.lastUpdate > UPDATE_FREQUENCY) {
+            // _this.api.log(_this.name,"Updating");
+            await this.updateZoneTemp();
+            this.lastUpdate = Date.now();
+            // _this.api.log(_this.name,"Done Updating");
+            cb(_this);
+        }
+        else {
+            // _this.api.log(_this.name,"Using cache");
+            cb(_this);
+        }
+        this.lock.release();
     }
 
     getCurrentHeatingCoolingState(callback) {
@@ -314,14 +400,15 @@ class Thermostat {
     }
 
     setTargetHeatingCoolingState(value, callback) {
-        // this.api.log(this.name, 'target heating / cooling state: ' + value);
+        this.api.log(this.name, 'target heating / cooling state: ' + value);
+        this.setState(value, callback);
         // this.powerOn = value === Characteristic.CurrentHeatingCoolingState.COOL;
         // this.update(callback).then(() => callback(null, value));
     }
 
     getCurrentTemperature(callback) {
         this.update(function (t) {
-            t.api.log(t.name, 'current temp: ' + t.actualTemp);
+            // t.api.log(t.name, 'current temp: ' + t.actualTemp);
             callback(null, t.actualTemp);
         });
     }
@@ -329,20 +416,27 @@ class Thermostat {
     getTargetTemperature(callback) {
         var _this = this;
         this.update(function (t) {
-            t.api.log(t.name, 'target temp: ' + t.setTemp);
+            // t.api.log(t.name, 'target temp: ' + t.setTemp);
             callback(null, t.setTemp);
         });
     }
 
     setTargetTemperature(value, callback) {
-        // const targetInF = toF(value);
-        // this.api.log(this.name, 'set target temp: ' + targetInF + ' / ' + value);
-        // this.targetTemp = targetInF;
+        const targetInF = toF(value);
+        this.api.log(this.name, 'set target temp: ' + targetInF + ' / ' + value);
+        this.targetTemp = value;
+
+        if (this.targetTemp != this.setTemp) {
+            //Need to ask daikin to set new temp
+            this.setZoneTemp(this.targetTemp, callback);
+            this.setTemp = this.targetTemp;
+
+        }
         // this.update().then(() => callback(null, value));
     }
 
     getTemperatureDisplayUnits(callback) {
-        this.api.log(this.name, 'temperature display units');
+        // this.api.log(this.name, 'temperature display units');
         callback(null, Characteristic.TemperatureDisplayUnits.FAHRENHEIT);
     }
 
