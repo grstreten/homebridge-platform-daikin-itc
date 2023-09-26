@@ -266,6 +266,7 @@ class Thermostat {
         var b = ByteBuffer.wrap(res, true);
 
         // console log b
+        console.log("Response from Daikin in Hex:");
         console.log(b.toString("debug"));
 
         var i = b.readInt32(60);
