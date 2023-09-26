@@ -1,6 +1,6 @@
 {
   "name": "homebridge-platform-daikinitc",
-  "version": "1.1.2",
+  "version": "2.0.0",
   "description": "DaikinITC plugin for homebridge",
   "keywords": [
     "homebridge-plugin",
@@ -8,7 +8,7 @@
     "daikin"
   ],
   "main": "index.js",
-  "author": "Jonathan Bell <jon@jonbell.net>",
+  "author": "Jonathan Bell <jon@jonbell.net>; George Streten <george@streten.me>",
   "license": "MIT",
   "repository": {
     "type": "git",
