@@ -277,7 +277,7 @@ class Thermostat {
         _this.setTemp = temp1;
         _this.actualTemp = temp2;
         _this.run_mode = getDriveMode(b.readInt32(44));
-        _this.on_mode = b.readInt32(42); //b.readByte(73);
+        _this.on_mode = b.readByte(42);
         // if off mode, set run mode to OFF
         if (_this.on_mode == 0) {
             _this.run_mode = "OFF";
