@@ -364,6 +364,24 @@ class Thermostat {
                     cb(null, state);
                 });
             }
+            else if (state == 3) {
+                //auto
+                var bb = new ByteBuffer(68, true)
+                    .writeInt32(68) //size @0
+                    .writeInt32(60112)//COMM@4
+                    .writeInt32(this.id)//zone @8
+                    .fill(0)
+                    .writeInt32(1, 32) //new state, if set also need to set byte 52 to 1
+                    .writeInt32(64, 36) //new mode, if set also need to set byte 53 to 1
+                    .writeFloat(0, 48) //new temp, if set also need to set byte 54 to 1
+                    .writeByte(1, 52) //flag to indicate new state
+                    .writeByte(1, 53) //flag to indicate new mode
+                    .writeByte(0, 54) //flag to indicate new temp
+                    .flip();
+                this.api.sendReq(bb.toBuffer()).then(function (res) {
+                    cb(null, state);
+                });
+            }
 
         }
     }
