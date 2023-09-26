@@ -11,8 +11,6 @@ module.exports = function (homebridge) {
     homebridge.registerPlatform('homebridge-platform-daikin-itc', 'DaikinITC', SmartACPlatform);
 };
 
-
-
 function readDaikinString(bb, offset, max) {
     var ret = "";
     for (i = 0; i < max; i++) {
@@ -23,8 +21,6 @@ function readDaikinString(bb, offset, max) {
     }
     return ret;
 }
-
-
 
 function getDriveMode(m) {
     console.log("Drive mode: " + m);
@@ -129,7 +125,7 @@ class ThinkEcoAPI {
     }
 
     async auth() {
-        /*Daikin ITC has no need to login apparently*/
+        // Login is not required by Daikin WebITC
     }
 
 
@@ -393,13 +389,16 @@ class Thermostat {
     getCurrentHeatingCoolingState(callback) {
         var _this = this;
         this.update(function () {
-            _this.api.log(_this.name, 'heating / cooling state: ' + _this.run_mode);
             var rm = Characteristic.CurrentHeatingCoolingState.OFF;
             if (_this.on_mode == 'ON') {
+                _this.api.log(_this.name, 'heating / cooling state: ' + _this.run_mode);
+
                 if (_this.run_mode == "Heat")
                     rm = Characteristic.CurrentHeatingCoolingState.HEAT;
                 else if (_this.run_mode == "Cool")
                     rm = Characteristic.CurrentHeatingCoolingState.COOL;
+            } else {
+                _this.api.log(_this.name, 'heating / cooling state: Off');
             }
             callback(null, rm);
         });
