@@ -395,10 +395,12 @@ class Thermostat {
         this.update(function () {
             _this.api.log(_this.name, 'heating / cooling state: ' + _this.run_mode);
             var rm = Characteristic.CurrentHeatingCoolingState.OFF;
-            if (_this.run_mode == "Heat")
-                rm = Characteristic.CurrentHeatingCoolingState.HEAT;
-            else if (_this.run_mode == "Cool")
-                rm = Characteristic.CurrentHeatingCoolingState.COOL;
+            if (_this.on_mode == 'ON') {
+                if (_this.run_mode == "Heat")
+                    rm = Characteristic.CurrentHeatingCoolingState.HEAT;
+                else if (_this.run_mode == "Cool")
+                    rm = Characteristic.CurrentHeatingCoolingState.COOL;
+            }
             callback(null, rm);
         });
     }
