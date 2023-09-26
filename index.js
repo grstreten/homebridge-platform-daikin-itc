@@ -33,9 +33,9 @@ function getDriveMode(m) {
     if (m == 32)
         return "Vent";
     if (m == 256)
-        return "Heat";
+        return "Auto"; // auto, currently heating
     if (m == 512)
-        return "Cool";
+        return "Auto"; // auto, currently cooling
 
 }
 
@@ -277,7 +277,7 @@ class Thermostat {
         _this.setTemp = temp1;
         _this.actualTemp = temp2;
         _this.run_mode = getDriveMode(b.readInt32(44));
-        _this.on_mode = b.readByte(73);
+        _this.on_mode = b.readInt32(42); //b.readByte(73);
         // if off mode, set run mode to OFF
         if (_this.on_mode == 0) {
             _this.run_mode = "OFF";
@@ -415,6 +415,8 @@ class Thermostat {
                     rm = Characteristic.CurrentHeatingCoolingState.HEAT;
                 else if (_this.run_mode == "Cool")
                     rm = Characteristic.CurrentHeatingCoolingState.COOL;
+                else if (_this.run_mode == "Auto")
+                    rm = Characteristic.CurrentHeatingCoolingState.AUTO;
             } else {
                 _this.api.log(_this.name, 'heating / cooling state: Off');
             }
