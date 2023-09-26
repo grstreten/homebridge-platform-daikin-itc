@@ -51,7 +51,7 @@ function SmartACPlatform(log, config) {
 }
 
 SmartACPlatform.prototype.accessories = function (callback) {
-    new ThinkEcoAPI(this.log,this.addr,this.zones)
+    new ThinkEcoAPI(this.log, this.addr, this.zones)
         .getThermostats(function (data) {
 
             callback(Array.from(data));
@@ -107,7 +107,7 @@ class ThinkEcoAPI {
         this.lastLogin = new Date(1970, 1, 1);
         this.lastUpdate = new Date(1970, 1, 1);
         this.thermostats = new Map();
-        this.session = rp.defaults({gzip: true, jar: true});
+        this.session = rp.defaults({ gzip: true, jar: true });
         this.log = log;
         this.lock = new Lock();
         this.addr = addr;
@@ -198,7 +198,7 @@ class ThinkEcoAPI {
                         sname: readDaikinString(zonesResult, idx + 20, 16)
                         // name: readDaikinString(zonesResult,idx+36,64)
                     };
-                    if(_this.zones && _this.zones[zone.sname])
+                    if (_this.zones && _this.zones[zone.sname])
                         zone.sname = _this.zones[zone.sname];
                     let thermostat = _this.thermostats.get(zone.id);
                     if (!thermostat) {
@@ -282,13 +282,17 @@ class Thermostat {
         _this.actualTemp = temp2;
         _this.run_mode = getDriveMode(b.readInt32(44));
         _this.on_mode = b.readByte(73);
+        // if off mode, set run mode to OFF
+        if (_this.on_mode == 0) {
+            _this.run_mode = "OFF";
+        }
         _this.api.log(_this.name, "New set temp " + temp1 + ", " + temp2);
         // cb(_this);
         return this;
     }
 
-    setZoneTemp(tempC, cb){
-        var bb = new ByteBuffer(68,true)
+    setZoneTemp(tempC, cb) {
+        var bb = new ByteBuffer(68, true)
             .writeInt32(68) //size @0
             .writeInt32(60112)//COMM@4
             .writeInt32(this.id)//zone @8
@@ -301,7 +305,7 @@ class Thermostat {
             .writeByte(1, 54) //flag to indicate new temp
             .flip();
         // console.log(bb.toString("debug"));
-        this.api.sendReq(bb.toBuffer()).then(function(res){
+        this.api.sendReq(bb.toBuffer()).then(function (res) {
             cb(null, tempC);
             // console.log("Finished sending");
             // console.log(res);
@@ -313,7 +317,7 @@ class Thermostat {
     }
 
     setState(state, cb) {
-        if(state == 0) {
+        if (state == 0) {
             var bb = new ByteBuffer(40, true)
                 .writeInt32(40) //size @0
                 .writeInt32(60106)//COMM@4
@@ -326,11 +330,11 @@ class Thermostat {
                 cb(null, state);
             });
         }
-        else{
+        else {
             //on...
-            if(state == 1){
+            if (state == 1) {
                 //cooling
-                var bb = new ByteBuffer(68,true)
+                var bb = new ByteBuffer(68, true)
                     .writeInt32(68) //size @0
                     .writeInt32(60112)//COMM@4
                     .writeInt32(this.id)//zone @8
@@ -342,13 +346,13 @@ class Thermostat {
                     .writeByte(1, 53) //flag to indicate new mode
                     .writeByte(0, 54) //flag to indicate new temp
                     .flip();
-                this.api.sendReq(bb.toBuffer()).then(function(res){
+                this.api.sendReq(bb.toBuffer()).then(function (res) {
                     cb(null, state);
                 });
             }
-            else if(state == 2){
+            else if (state == 2) {
                 //heating
-                var bb = new ByteBuffer(68,true)
+                var bb = new ByteBuffer(68, true)
                     .writeInt32(68) //size @0
                     .writeInt32(60112)//COMM@4
                     .writeInt32(this.id)//zone @8
@@ -360,7 +364,7 @@ class Thermostat {
                     .writeByte(1, 53) //flag to indicate new mode
                     .writeByte(0, 54) //flag to indicate new temp
                     .flip();
-                this.api.sendReq(bb.toBuffer()).then(function(res){
+                this.api.sendReq(bb.toBuffer()).then(function (res) {
                     cb(null, state);
                 });
             }
@@ -457,12 +461,12 @@ class Thermostat {
         // min/max controls what the ios home app shows for the range of control
         thermostatService
             .getCharacteristic(Characteristic.CurrentTemperature)
-            .setProps({minValue: 5, maxValue: 40, minStep: 0.1})
+            .setProps({ minValue: 5, maxValue: 40, minStep: 0.1 })
             .on('get', this.getCurrentTemperature.bind(this));
 
         thermostatService
             .getCharacteristic(Characteristic.TargetTemperature)
-            .setProps({minValue: 15, maxValue: 33, minStep: 0.1})
+            .setProps({ minValue: 15, maxValue: 33, minStep: 0.1 })
             .on('get', this.getTargetTemperature.bind(this))
             .on('set', this.setTargetTemperature.bind(this));
 
