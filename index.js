@@ -264,6 +264,10 @@ class Thermostat {
             .fill(0).flip();
         let res = await this.api.sendReq(bb.toBuffer());
         var b = ByteBuffer.wrap(res, true);
+
+        // console log b
+        console.log(b.toString("debug"));
+
         var i = b.readInt32(60);
         var temp1, temp2;
         if (i & 0x1 != 0)
